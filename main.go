@@ -4,34 +4,42 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
+	"os/signal"
+	"syscall"
 
+	v1 "github.com/viswas163/MarvelousShipt/api/v1"
 	"github.com/viswas163/MarvelousShipt/routes"
 )
 
-// MarvelAPIKeyEnvKey : The OS environment key to fetch the Marvel Developer API Key string
-var MarvelAPIKeyEnvKey = "MARVEL_API_KEY"
-
 func main() {
-	hasKey := ""
 
-	fmt.Println("Starting Server...")
+	fmt.Println("\nStarting Server...")
 
-	for !strings.EqualFold(hasKey, "y") && !strings.EqualFold(hasKey, "n") && !strings.EqualFold(hasKey, "yes") && !strings.EqualFold(hasKey, "no") {
-		fmt.Println("Do you have a Marvel Developer API Key? (y/n)")
-		fmt.Scanln(&hasKey)
-	}
+	setupCloseHandler()
 
-	if strings.EqualFold(hasKey, "y") || strings.EqualFold(hasKey, "yes") {
-		userAPIKey := ""
-		fmt.Println("Enter the API Key please...")
-		fmt.Scanln(&userAPIKey)
-		os.Setenv(MarvelAPIKeyEnvKey, userAPIKey)
-	}
+	v1.InitAuthClient()
+
+	resp, _ := v1.RunAuth("characters")
+	fmt.Println(string(resp))
 
 	routes.HandleRoutes()
-
 	fmt.Println("Started Server... OK!")
-
 	http.ListenAndServe(":3001", nil)
+}
+
+func setupCloseHandler() {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		fmt.Println("\r- Server shutdown by user")
+		cleanup()
+		os.Exit(0)
+	}()
+}
+
+func cleanup() {
+	fmt.Println("\r- Cleaning up...")
+	os.Unsetenv(v1.MarvelPrivateAPIKeyEnvKey)
+	fmt.Println("\r- Good Bye!")
 }

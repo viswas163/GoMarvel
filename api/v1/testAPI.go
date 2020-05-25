@@ -10,12 +10,14 @@ import (
 	"os"
 )
 
+// Hello : Says hello to the user
 func Hello(w http.ResponseWriter, req *http.Request) {
 	log.Println("/hello API called")
 	fmt.Fprintf(w, "Hello Agent!")
 	log.Println("/hello API call successful!")
 }
 
+// Headers : Shows the request headers info
 func Headers(w http.ResponseWriter, r *http.Request) {
 	log.Println("/headers API called")
 	for name, headers := range r.Header {
@@ -26,6 +28,7 @@ func Headers(w http.ResponseWriter, r *http.Request) {
 	log.Println("/headers API call successful!")
 }
 
+// Image : Displays an image in root dir
 func Image(w http.ResponseWriter, r *http.Request) {
 	fileName := "YuGarden.jpg"
 	file, err := os.Open(fileName)
