@@ -24,8 +24,8 @@ import (
 )
 
 var (
-	// PROD_ENV : Switch for prod/dev env
-	PROD_ENV = false
+	// ProdEnv : Switch for prod/dev env
+	ProdEnv = false
 	// BaseURL : Marvel API base URL
 	BaseURL = "https://gateway.marvel.com/v1/public/"
 
@@ -61,13 +61,13 @@ func InitAuthClient() models.AuthClient {
 	MarvelPublicAPIKey = string(content)
 
 	// Get user input for private key
-	for PROD_ENV && !strings.EqualFold(hasKey, "y") && !strings.EqualFold(hasKey, "n") && !strings.EqualFold(hasKey, "yes") && !strings.EqualFold(hasKey, "no") {
+	for ProdEnv && !strings.EqualFold(hasKey, "y") && !strings.EqualFold(hasKey, "n") && !strings.EqualFold(hasKey, "yes") && !strings.EqualFold(hasKey, "no") {
 		fmt.Print("\nDo you have a Marvel Developer Private API Key? (y/n) : ")
 		fmt.Scanln(&hasKey)
 	}
 
 	// Get private key from user
-	if PROD_ENV && (strings.EqualFold(hasKey, "y") || strings.EqualFold(hasKey, "yes")) {
+	if ProdEnv && (strings.EqualFold(hasKey, "y") || strings.EqualFold(hasKey, "yes")) {
 		userAPIKey := ""
 		fmt.Print(aurora.Cyan("\nNote : The Private API Key is not stored anywhere"), "\nEnter the Private API Key please : ")
 		fmt.Scanln(&userAPIKey)
