@@ -48,6 +48,9 @@ func main() {
 		done <- os.Interrupt
 	}
 
+	v1.GetAllCharacters()
+	// v1.RunAPIWithoutParam("characters", 0)
+
 	log.Print("DB Initialized!")
 	log.Print("Server Ready for incoming requests...")
 

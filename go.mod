@@ -7,6 +7,7 @@ require (
 	github.com/dghubble/sling v1.3.0
 	github.com/dnaeon/go-vcr v1.0.1
 	github.com/gorilla/mux v1.7.4
+	github.com/juliangruber/go-intersect v1.0.0
 	github.com/logrusorgru/aurora v0.0.0-20200102142835-e9ef32dff381
 	golang.org/x/sys v0.0.0-20200523222454-059865788121 // indirect
 	gopkg.in/yaml.v2 v2.3.0 // indirect
