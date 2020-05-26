@@ -9,15 +9,12 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/dghubble/sling"
-	"github.com/dnaeon/go-vcr/recorder"
 	"github.com/logrusorgru/aurora"
 
 	"github.com/viswas163/MarvelousShipt/models"
@@ -25,7 +22,7 @@ import (
 
 var (
 	// ProdEnv : Switch for prod/dev env
-	ProdEnv = false
+	ProdEnv = true
 	// BaseURL : Marvel API base URL
 	BaseURL = "https://gateway.marvel.com/v1/public/"
 
@@ -39,6 +36,8 @@ var (
 	MarvelPrivateAPIKey = ""
 	// AuthClient : The global Authentication Client instance
 	AuthClient models.AuthClient
+	// Limit : Limits the response query results
+	Limit = 100
 
 	privateKeyFileName = "MarvelPrivateKey.txt"
 	publicKeyFileName  = "MarvelPublicKey.txt"
@@ -53,7 +52,7 @@ func InitAuthClient() models.AuthClient {
 	if err != nil {
 		log.Println("Error getting working dir path : ", err)
 	}
-	pubPath := filepath.Join(filepath.Dir(path), publicKeyFileName)
+	pubPath := filepath.Join(path, publicKeyFileName)
 	content, err := ioutil.ReadFile(pubPath)
 	if err != nil {
 		log.Println("Error reading public key file", err)
@@ -73,7 +72,7 @@ func InitAuthClient() models.AuthClient {
 		fmt.Scanln(&userAPIKey)
 		os.Setenv(MarvelPrivateAPIKeyEnvKey, userAPIKey)
 	} else { // Get private key from file in parent directory
-		privPath := filepath.Join(filepath.Dir(path), privateKeyFileName)
+		privPath := filepath.Join(path, privateKeyFileName)
 		content, err := ioutil.ReadFile(privPath)
 		if err != nil {
 			log.Println("Error reading private key file", err)
@@ -91,30 +90,64 @@ func InitAuthClient() models.AuthClient {
 }
 
 // GetAuthenticator : Gets the authenticator using client params
-func getAuthenticator() *models.Authenticator {
+func getAuthenticator() (*models.Authenticator, error) {
 
 	ts := strconv.FormatInt(time.Now().Unix(), 10)
 
 	authString := ts + AuthClient.PrivateKey + AuthClient.PublicKey
 
 	hasher := md5.New()
-	hasher.Write([]byte(authString))
+	if _, err := hasher.Write([]byte(authString)); err != nil {
+		fmt.Println("getAuthenticator() : Error hashing byte array of authstring : ", authString, "\n Error : ", err)
+		return nil, err
+	}
 	hash := hex.EncodeToString(hasher.Sum(nil))
 
 	return &models.Authenticator{
 		Timestamp: ts,
 		PublicKey: AuthClient.PublicKey,
 		Hash:      hash,
-	}
+	}, nil
 }
 
-// RunAPI : Runs Authentication for request
-func RunAPI(cassette string) ([]byte, error) {
-	req, err := GetAuthRequest(cassette)
+// GetAuthRequest : Returns the authentication request URL for the provided Resource
+func GetAuthRequest(resource string) (*sling.Sling, error) {
+	var netClient = http.DefaultClient
+
+	// Get Authenticator using client params
+	auth, err := getAuthenticator()
 	if err != nil {
 		return nil, err
 	}
-	response := executeRequest(req)
+
+	base := sling.New().Client(netClient).Base(BaseURL).Path(resource)
+	// Construct URL query for base sling
+	base.QueryStruct(auth)
+
+	return base, nil
+}
+
+func RunAPIWithParam(resource string, offset int, params []string) ([]byte, error) {
+	return RunAPI(resource, offset, params)
+}
+
+func RunAPIWithoutParam(resource string, offset int) ([]byte, error) {
+	return RunAPI(resource, offset, []string{})
+}
+
+// RunAPI : Runs Authentication for request
+func RunAPI(resource string, offset int, param []string) ([]byte, error) {
+	req, err := GetAuthRequest(resource)
+	if err != nil {
+		return nil, err
+	}
+
+	params := &models.CharacterParams{Limit: Limit, Offset: offset}
+	response, err := executeRequest(req, resource, param, params)
+	if err != nil {
+		return nil, err
+	}
+
 	checkResponseCode(http.StatusOK, response)
 	body, err := checkResponseBody(response)
 	if err != nil {
@@ -123,51 +156,30 @@ func RunAPI(cassette string) ([]byte, error) {
 	return body, nil
 }
 
-// GetAuthRequest : Returns the authentication request URL for the provided Resource
-func GetAuthRequest(cassette string) (*http.Request, error) {
-	_, filename, _, ok := runtime.Caller(0)
-	if !ok {
-		fmt.Println("no caller information when determining file location")
-		return &http.Request{}, errors.New("Cannot get runtime caller file name")
+func executeRequest(req *sling.Sling, pathURL string, param []string, params interface{}) (*http.Response, error) {
+
+	req = req.New().Get(pathURL)
+	if len(param) > 0 {
+		str := pathURL
+		for _, p := range param {
+			str += "/" + p
+		}
+		// fmt.Println(str)
+		req.Path(str)
 	}
+	req = req.QueryStruct(params)
 
-	path := filepath.Join(path.Dir(filename), "fixtures")
-	rec, err := recorder.New(path)
-	if err != nil {
-		fmt.Println("could not create recoorder with path : ", path)
-		return &http.Request{}, err
-	}
-	// defer rec.Stop()
+	r, _ := req.Request()
+	// response := &http.Response{}
+	// fmt.Println(r)
 
-	// Get Authenticator using client params
-	auth := getAuthenticator()
-
-	// Create Base sling
-	recHTTPClient := &http.Client{
-		Transport: rec,
-	}
-	base := sling.New().Client(recHTTPClient).Base(BaseURL).Path(cassette)
-	// Construct URL query for base sling
-	base.QueryStruct(auth)
-
-	// Create http request from base sling
-	req, err := base.Request()
-	if err != nil {
-		fmt.Println("Error parsing request : ", err)
-		return &http.Request{}, err
-	}
-	return req, nil
-}
-
-func executeRequest(req *http.Request) *http.Response {
-
-	// Using http client
 	client := &http.Client{}
-	response, err := client.Do(req)
+	response, err := client.Do(r)
 	if err != nil {
-		fmt.Print("Error performing request : ", err)
+		fmt.Println("executeRequest() : Error in client response : ", err)
+		return nil, err
 	}
-	return response
+	return response, nil
 }
 
 func checkResponseCode(expected int, response *http.Response) {
@@ -179,10 +191,14 @@ func checkResponseCode(expected int, response *http.Response) {
 }
 
 func checkResponseBody(response *http.Response) ([]byte, error) {
+	if response == nil || response.Body == nil {
+		return nil, errors.New("Empty response")
+	}
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		fmt.Println("Error reading response body : ", err)
 		return nil, err
 	}
+
 	return body, nil
 }

@@ -48,6 +48,8 @@ func main() {
 		done <- os.Interrupt
 	}
 
+	v1.GetAllCharacters()
+
 	log.Print("DB Initialized!")
 	log.Print("Server Ready for incoming requests...")
 
