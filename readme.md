@@ -11,8 +11,11 @@ MarvelousShipt is a Golang Backend server consuming Marvel Developer REST API.
 ## Usage
 
 /allcharacters - Retrieves all the characters from the Marvel API
+
 /characters/{characterName} - Retrieves the character and their details with characterName name
+
 /characters/{characterName1}/{characterName2} - Retrieves the common comics between the two characters with names characterName1 and characterName2
+
 /stormvsemma - Retrieves the common comics between Emma Frost and Storm
 
 ## Contributing
