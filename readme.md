@@ -1,4 +1,4 @@
-# Foobar
+# MarvelousShipt
 
 MarvelousShipt is a Golang Backend server consuming Marvel Developer REST API.
 
