@@ -50,7 +50,7 @@ func main() {
 
 	v1.GetAllCharacters()
 
-	log.Print("DB Initialized!")
+	log.Println("DB Initialized!")
 	log.Print("Server Ready for incoming requests...")
 
 	<-done
