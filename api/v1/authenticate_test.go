@@ -15,7 +15,7 @@ func TestRunHello(t *testing.T) {
 	}
 }
 
-func TestRunAuth(t *testing.T) {
+func TestRunAPI(t *testing.T) {
 	request, _ := GetAuthRequest("characters")
 	response := executeRequest(request)
 	checkResponseCode(http.StatusOK, response)

@@ -24,6 +24,8 @@ import (
 )
 
 var (
+	// PROD_ENV : Switch for prod/dev env
+	PROD_ENV = false
 	// BaseURL : Marvel API base URL
 	BaseURL = "https://gateway.marvel.com/v1/public/"
 
@@ -35,7 +37,8 @@ var (
 	MarvelPublicAPIKey = ""
 	// MarvelPrivateAPIKey : The Marvel private API key
 	MarvelPrivateAPIKey = ""
-	AuthClient          models.AuthClient
+	// AuthClient : The global Authentication Client instance
+	AuthClient models.AuthClient
 
 	privateKeyFileName = "MarvelPrivateKey.txt"
 	publicKeyFileName  = "MarvelPublicKey.txt"
@@ -58,13 +61,13 @@ func InitAuthClient() models.AuthClient {
 	MarvelPublicAPIKey = string(content)
 
 	// Get user input for private key
-	for !strings.EqualFold(hasKey, "y") && !strings.EqualFold(hasKey, "n") && !strings.EqualFold(hasKey, "yes") && !strings.EqualFold(hasKey, "no") {
+	for PROD_ENV && !strings.EqualFold(hasKey, "y") && !strings.EqualFold(hasKey, "n") && !strings.EqualFold(hasKey, "yes") && !strings.EqualFold(hasKey, "no") {
 		fmt.Print("\nDo you have a Marvel Developer Private API Key? (y/n) : ")
 		fmt.Scanln(&hasKey)
 	}
 
 	// Get private key from user
-	if strings.EqualFold(hasKey, "y") || strings.EqualFold(hasKey, "yes") {
+	if PROD_ENV && (strings.EqualFold(hasKey, "y") || strings.EqualFold(hasKey, "yes")) {
 		userAPIKey := ""
 		fmt.Print(aurora.Cyan("\nNote : The Private API Key is not stored anywhere"), "\nEnter the Private API Key please : ")
 		fmt.Scanln(&userAPIKey)
@@ -87,10 +90,6 @@ func InitAuthClient() models.AuthClient {
 	return client
 }
 
-// func GetAuthClient() models.AuthClient {
-// 	return
-// }
-
 // GetAuthenticator : Gets the authenticator using client params
 func getAuthenticator() *models.Authenticator {
 
@@ -109,8 +108,8 @@ func getAuthenticator() *models.Authenticator {
 	}
 }
 
-// RunAuth : Runs Authentication for request
-func RunAuth(cassette string) ([]byte, error) {
+// RunAPI : Runs Authentication for request
+func RunAPI(cassette string) ([]byte, error) {
 	req, err := GetAuthRequest(cassette)
 	if err != nil {
 		return nil, err
@@ -124,9 +123,8 @@ func RunAuth(cassette string) ([]byte, error) {
 	return body, nil
 }
 
+// GetAuthRequest : Returns the authentication request URL for the provided Resource
 func GetAuthRequest(cassette string) (*http.Request, error) {
-	// cassette = "characters"
-
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		fmt.Println("no caller information when determining file location")
@@ -139,7 +137,7 @@ func GetAuthRequest(cassette string) (*http.Request, error) {
 		fmt.Println("could not create recoorder with path : ", path)
 		return &http.Request{}, err
 	}
-	defer rec.Stop()
+	// defer rec.Stop()
 
 	// Get Authenticator using client params
 	auth := getAuthenticator()
