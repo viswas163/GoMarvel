@@ -3,7 +3,6 @@ package v1
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"reflect"
 
@@ -18,7 +17,7 @@ func RetrieveCharacter(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid param", 400)
 	}
 
-	fmt.Print(key)
+	// fmt.Print(key)
 	character, _ := GetCharacter(key)
 
 	json, err := json.Marshal(character)
@@ -54,6 +53,7 @@ func GetCommonComics(w http.ResponseWriter, r *http.Request) {
 	char1, _ := GetCharacter(key1)
 	char2, _ := GetCharacter(key2)
 
+	PushChars(char1, char2)
 	commonComics := GetCommon(char1, char2)
 
 	json, err := json.Marshal(commonComics)
@@ -64,9 +64,12 @@ func GetCommonComics(w http.ResponseWriter, r *http.Request) {
 	w.Write(json)
 }
 
-func GetCommon(char1 models.Character, char2 models.Character) interface{} {
+func PushChars(char1 models.Character, char2 models.Character) {
 	PushComicsOfChar(char1)
 	PushComicsOfChar(char2)
+}
+
+func GetCommon(char1 models.Character, char2 models.Character) interface{} {
 	l1, ok1 := models.ComicsByCharacter.Load(char1.Name)
 	l2, ok2 := models.ComicsByCharacter.Load(char2.Name)
 	if !ok1 || !ok2 {
@@ -107,6 +110,7 @@ func EmmaStorm(w http.ResponseWriter, r *http.Request) {
 	t2, _ := models.CharactersByName.Load("Storm")
 	storm = t2.(models.Character)
 
+	PushChars(emma, storm)
 	common := GetCommon(emma, storm)
 
 	json, err := json.Marshal(common)
