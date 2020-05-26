@@ -22,7 +22,7 @@ import (
 
 var (
 	// ProdEnv : Switch for prod/dev env
-	ProdEnv = false
+	ProdEnv = true
 	// BaseURL : Marvel API base URL
 	BaseURL = "https://gateway.marvel.com/v1/public/"
 
@@ -52,7 +52,7 @@ func InitAuthClient() models.AuthClient {
 	if err != nil {
 		log.Println("Error getting working dir path : ", err)
 	}
-	pubPath := filepath.Join(filepath.Dir(path), publicKeyFileName)
+	pubPath := filepath.Join(path, publicKeyFileName)
 	content, err := ioutil.ReadFile(pubPath)
 	if err != nil {
 		log.Println("Error reading public key file", err)
@@ -72,7 +72,7 @@ func InitAuthClient() models.AuthClient {
 		fmt.Scanln(&userAPIKey)
 		os.Setenv(MarvelPrivateAPIKeyEnvKey, userAPIKey)
 	} else { // Get private key from file in parent directory
-		privPath := filepath.Join(filepath.Dir(path), privateKeyFileName)
+		privPath := filepath.Join(path, privateKeyFileName)
 		content, err := ioutil.ReadFile(privPath)
 		if err != nil {
 			log.Println("Error reading private key file", err)

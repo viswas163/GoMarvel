@@ -36,7 +36,7 @@ func getComicsByCharIDOffset(id int, offset int) (models.ComicsDataWrapper, erro
 	db.GetInstance().Get(fmt.Sprint(allComicsJSONDBKey, offset), &coms)
 	var err error
 	if len(coms) <= 0 {
-		fmt.Println("Running all comics API")
+		fmt.Println("Fetching results from API")
 		coms, err = RunAPIWithParam(allCharactersAPI, offset, []string{strconv.Itoa(id), allComicsAPI})
 		if err != nil {
 			return models.ComicsDataWrapper{}, err

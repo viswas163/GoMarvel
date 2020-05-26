@@ -70,7 +70,6 @@ func CheckComicsExist(cName string, allComs []Comic) bool {
 	firstCID := allComs[0].ID
 	lastCID := allComs[len(allComs)-1].ID
 
-	fmt.Println("Got ", firstCID, lastCID, " as comics, and exists = ")
 	secondOK, lastOK := false, false
 	comics, firstOK := ComicsByCharacter.Load(cName)
 	if firstOK {
@@ -78,8 +77,6 @@ func CheckComicsExist(cName string, allComs []Comic) bool {
 		secondOK = coms.Index(0).Interface().(int) == firstCID
 		lastOK = coms.Index(coms.Len()-1).Interface().(int) == lastCID
 	}
-
-	fmt.Println("Got ", firstCID, lastCID, " as comics, and exists = ", firstOK && secondOK && lastOK)
 
 	return firstOK && secondOK && lastOK
 }
@@ -97,6 +94,6 @@ func SetAllComicsByCharName(cName string, allComics []Comic) error {
 	}
 	ComicsByCharacter.LoadOrStore(cName, comicIDsOfChar)
 	comicsByCharCounter++
-	fmt.Println("Added comics : ", comicsByCharCounter)
+	fmt.Printf("Added %d new comics!", comicsByCharCounter)
 	return nil
 }

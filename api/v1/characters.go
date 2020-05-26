@@ -57,7 +57,7 @@ func GetCharactersByOffset(offset int) (models.CharacterDataWrapper, error) {
 	var err error
 
 	if len(characters) <= 0 {
-		fmt.Println("Running api req...")
+		fmt.Println("Fetching API results...")
 		characters, err = RunAPIWithoutParam(allCharactersAPI, offset)
 		if err != nil {
 			return models.CharacterDataWrapper{}, err

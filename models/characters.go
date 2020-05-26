@@ -70,12 +70,8 @@ func CheckCharsExist(allChars []Character) bool {
 	firstChName := allChars[0].Name
 	lastChName := allChars[len(allChars)-1].Name
 
-	fmt.Println("Got ", firstChName, lastChName, " as chars, and exists = ")
-
 	_, firstOK := CharactersByName.Load(firstChName)
 	_, lastOK := CharactersByName.Load(lastChName)
-
-	fmt.Println("Got ", firstChName, lastChName, " as chars, and exists = ", firstOK && lastOK)
 
 	return firstOK && lastOK
 }
@@ -89,7 +85,7 @@ func SetAllCharactersByName(allChars []Character) error {
 		CharactersByName.LoadOrStore(character.Name, character)
 		characterCount++
 	}
-	fmt.Println("Added chars : ", characterCount)
+	fmt.Printf("Added %d new characters!", characterCount)
 	return nil
 }
 
