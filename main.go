@@ -1,55 +1,78 @@
 package main
 
 import (
-	"bufio"
-	"errors"
+	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/gorilla/mux"
+	v1 "github.com/viswas163/MarvelousShipt/api/v1"
+	"github.com/viswas163/MarvelousShipt/db"
+	"github.com/viswas163/MarvelousShipt/routes"
 )
-
-func hello(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(w, "Hello Agent!")
-}
-
-func headers(w http.ResponseWriter, r *http.Request) {
-	for name, headers := range r.Header {
-		for _, h := range headers {
-			fmt.Fprintf(w, "%v: %v\n", name, h)
-		}
-	}
-}
-
-func image(w http.ResponseWriter, r *http.Request) {
-	fileName := "YuGarden.jpg"
-	file, err := os.Open(fileName)
-	if err != nil {
-		log.Println("Open() :", errors.New("Error opening image file with name = "), fileName)
-		return
-	}
-
-	reader := bufio.NewReader(file)
-	content, err := ioutil.ReadAll(reader)
-	if err != nil {
-		log.Println("ReadAll() :", errors.New("Error reading file. Check it once"))
-		return
-	}
-
-	w.Header().Set("Content-Type", "image/jpeg")
-	w.Write(content)
-}
 
 func main() {
 
-	fmt.Println("Starting Server...")
+	router := &routes.Router{R: mux.NewRouter()}
+	router.HandleRoutes()
 
-	http.HandleFunc("/hello", hello)
-	http.HandleFunc("/headers", headers)
-	http.HandleFunc("/image", image)
+	server := &http.Server{
+		Addr:    ":3001",
+		Handler: router.R,
+	}
 
-	fmt.Println("Started Server... OK!")
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
-	http.ListenAndServe(":3001", nil)
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
+	log.Print("Server Started")
+
+	// Initialize Auth Client
+	v1.InitAuthClient()
+
+	log.Print("Private Key Initialized!")
+	log.Print("Initializing DB...")
+
+	// Initialize DB
+	_, err := db.Open("db/marvel.db")
+	if err != nil {
+		done <- os.Interrupt
+	}
+
+	log.Print("DB Initialized!")
+	log.Print("Server Ready for incoming requests...")
+
+	<-done
+	log.Print("Server Stopped")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer func() {
+		cleanup()
+		cancel()
+	}()
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatalf("Server Shutdown Failed:%+v", err)
+	}
+	log.Print("Server Exited Properly")
+}
+
+func cleanup() {
+	fmt.Println("\r- Cleaning up...")
+	if _, bool := os.LookupEnv(v1.MarvelPrivateAPIKeyEnvKey); bool {
+		os.Unsetenv(v1.MarvelPrivateAPIKeyEnvKey)
+	}
+	if err := db.GetInstance().Close(); err != nil {
+		fmt.Println("Error closing DB")
+	}
+	fmt.Println("\r- Good Bye!")
 }
