@@ -3,23 +3,21 @@ package v1
 import (
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
 
-	"github.com/logrusorgru/aurora"
+	"github.com/google/go-cmp/cmp"
 	"github.com/viswas163/MarvelousShipt/db"
 	"github.com/viswas163/MarvelousShipt/models"
 )
 
 func TestGetCommon(t *testing.T) {
-	comics := []int{123, 456, 789, 234, 678, 982}
 	var tests = []struct {
 		name    string
 		char1   models.Character
 		comics1 []int
 		char2   models.Character
 		comics2 []int
-		want    interface{}
+		want    []models.Comic
 	}{
 		{
 			"One Common",
@@ -38,8 +36,8 @@ func TestGetCommon(t *testing.T) {
 			models.Character{Name: "Cyclops"},
 			[]int{123, 982, 789},
 			[]models.Comic{
-				{ID: 789, Title: "abc"},
 				{ID: 123, Title: "abc"},
+				{ID: 789, Title: "abc"},
 			},
 		},
 		{
@@ -51,6 +49,7 @@ func TestGetCommon(t *testing.T) {
 			[]models.Comic{},
 		},
 	}
+	comics := []int{123, 456, 789, 234, 678, 982}
 	p, _ := os.Getwd()
 	p = filepath.Dir(filepath.Dir(p))
 	_, err := db.Open(p + "/db/marvel.db")
@@ -68,12 +67,9 @@ func TestGetCommon(t *testing.T) {
 			models.ComicsByCharacter.LoadOrStore(tt.char1.Name, tt.comics1)
 			models.ComicsByCharacter.LoadOrStore(tt.char2.Name, tt.comics2)
 			ans := GetCommon(tt.char1, tt.char2)
-			a := reflect.ValueOf(ans)
-			w := reflect.ValueOf(tt.want)
-			if a.Len() > 0 && w.Len() > 0 && a.Index(0) != w.Index(0) {
-				t.Errorf("got %d, want %d", ans, tt.want)
-			} else {
-				t.Log(tt.name, aurora.Green("Passed!"))
+
+			if len(ans) > 0 && len(tt.want) > 0 && !cmp.Equal(ans, tt.want) {
+				t.Errorf("got %v, want %v", ans, tt.want)
 			}
 		})
 	}
