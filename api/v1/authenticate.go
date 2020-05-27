@@ -127,10 +127,12 @@ func GetAuthRequest(resource string) (*sling.Sling, error) {
 	return base, nil
 }
 
+// RunAPIWithParam : Runs API call with URL params
 func RunAPIWithParam(resource string, offset int, params []string) ([]byte, error) {
 	return RunAPI(resource, offset, params)
 }
 
+// RunAPIWithoutParam : Runs API call without URL params
 func RunAPIWithoutParam(resource string, offset int) ([]byte, error) {
 	return RunAPI(resource, offset, []string{})
 }

@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sync"
 )
@@ -10,6 +11,8 @@ var (
 	// CharactersByName : map[character_name][characterModel]  { Map[string][Character] }
 	CharactersByName sync.Map
 	characterCount   = 0
+	// ErrCharDoesNotExist : Error if character not found in storage by name
+	ErrCharDoesNotExist = errors.New("Character does not exist")
 )
 
 // AllCharacters : Model for all characters
@@ -55,6 +58,19 @@ type CharacterSummary struct {
 	Summary
 }
 
+// GetCharacter : Gets a character from storage
+func GetCharacter(key string) (Character, error) {
+	character := Character{}
+	ch, ok := CharactersByName.Load(key)
+	if ok {
+		character, ok = ch.(Character)
+		if !ok {
+			return Character{}, ErrCharDoesNotExist
+		}
+	}
+	return character, nil
+}
+
 // GetAllCharacters : Gets all characters from response
 func GetAllCharacters(charactersJSON []byte) (CharacterDataWrapper, error) {
 	var allCharWrapper CharacterDataWrapper
@@ -66,7 +82,7 @@ func GetAllCharacters(charactersJSON []byte) (CharacterDataWrapper, error) {
 	return allCharWrapper, nil
 }
 
-func CheckCharsExist(allChars []Character) bool {
+func checkCharsExist(allChars []Character) bool {
 	firstChName := allChars[0].Name
 	lastChName := allChars[len(allChars)-1].Name
 
@@ -78,7 +94,7 @@ func CheckCharsExist(allChars []Character) bool {
 
 // SetAllCharactersByName : Sets all characters to map by name if not already existing
 func SetAllCharactersByName(allChars []Character) error {
-	if CheckCharsExist(allChars) {
+	if checkCharsExist(allChars) {
 		return nil
 	}
 	for _, character := range allChars {

@@ -32,6 +32,7 @@ func RetrieveAllCharacters(w http.ResponseWriter, r *http.Request) {
 	w.Write(json)
 }
 
+// GetAllCharacters : Gets all characters from API or response cache
 func GetAllCharacters() (models.CharacterDataWrapper, error) {
 	chars, err := GetCharactersByOffset(0)
 	if err != nil {
@@ -50,6 +51,7 @@ func GetAllCharacters() (models.CharacterDataWrapper, error) {
 	return chars, nil
 }
 
+// GetCharactersByOffset : Retrieves characters from API or response cache with offset
 func GetCharactersByOffset(offset int) (models.CharacterDataWrapper, error) {
 
 	characters := []byte{}

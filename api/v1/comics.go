@@ -13,6 +13,7 @@ var (
 	allComicsJSONDBKey = "comicsJSON"
 )
 
+// GetAllComicsOfChar : Get all comics of character
 func GetAllComicsOfChar(char models.Character) (models.ComicsDataWrapper, error) {
 
 	comics, err := getComicsByCharIDOffset(char.ID, 0)

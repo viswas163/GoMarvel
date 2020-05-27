@@ -8,9 +8,11 @@ import (
 )
 
 var (
+	// ComicsByCharacter : Map to store comics IDs by character name. map[char_name][comic_id] => map[string][[]int]
 	ComicsByCharacter   sync.Map
 	comicsByCharCounter = 0
 
+	// ComicsByID : Map to get comics by their IDs. map[comic_id][comic] => map[int][models.Comic]
 	ComicsByID        sync.Map
 	comicsByIDCounter = 0
 )
@@ -32,7 +34,7 @@ type Comic struct {
 	Characters         CharacterList  `json:"characters,omitempty"`
 }
 
-// ComicsDataContainer provides character wrapper information returned by the API.
+// ComicsDataWrapper provides character wrapper information returned by the API.
 type ComicsDataWrapper struct {
 	DataWrapper
 	Data ComicsDataContainer `json:"data,omitempty"`
@@ -55,7 +57,7 @@ type ComicSummary struct {
 	Summary
 }
 
-// GetAllCharacters : Gets all characters from response
+// GetAllComics : Gets all comics from response
 func GetAllComics(comicsJSON []byte) (ComicsDataWrapper, error) {
 	var allComicsWrapper ComicsDataWrapper
 	err := json.Unmarshal(comicsJSON, &allComicsWrapper)
@@ -66,7 +68,7 @@ func GetAllComics(comicsJSON []byte) (ComicsDataWrapper, error) {
 	return allComicsWrapper, nil
 }
 
-func CheckComicsExist(cName string, allComs []Comic) bool {
+func checkComicsExist(cName string, allComs []Comic) bool {
 	firstCID := allComs[0].ID
 	lastCID := allComs[len(allComs)-1].ID
 
@@ -83,7 +85,7 @@ func CheckComicsExist(cName string, allComs []Comic) bool {
 
 // SetAllComicsByCharName : Sets all comics to map by char name if not already existing
 func SetAllComicsByCharName(cName string, allComics []Comic) error {
-	if CheckComicsExist(cName, allComics) {
+	if checkComicsExist(cName, allComics) {
 		return nil
 	}
 	var comicIDsOfChar []int
