@@ -69,7 +69,7 @@ func PushChars(char1 models.Character, char2 models.Character) {
 	PushComicsOfChar(char2)
 }
 
-func GetCommon(char1 models.Character, char2 models.Character) interface{} {
+func GetCommon(char1 models.Character, char2 models.Character) []models.Comic {
 	l1, ok1 := models.ComicsByCharacter.Load(char1.Name)
 	l2, ok2 := models.ComicsByCharacter.Load(char2.Name)
 	if !ok1 || !ok2 {
@@ -78,10 +78,16 @@ func GetCommon(char1 models.Character, char2 models.Character) interface{} {
 	ids := intersect.Hash(l1, l2)
 	s := reflect.ValueOf(ids)
 
-	var comics []interface{}
+	var comics []models.Comic
+
 	for i := 0; i < s.Len(); i++ {
-		id := s.Index(0).Interface().(int)
-		comic, ok := models.ComicsByID.Load(id)
+		id := s.Index(i).Interface().(int)
+		com, ok := models.ComicsByID.Load(id)
+		if !ok {
+			continue
+		}
+
+		comic, ok := com.(models.Comic)
 		if !ok {
 			continue
 		}
